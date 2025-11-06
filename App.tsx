@@ -132,11 +132,9 @@ const RoleSelectionScreen: React.FC<{ onSelectRole: (role: UserRole) => void }> 
 const LoginForm: React.FC<{ role: UserRole; onBack: () => void }> = ({ role, onBack }) => {
     const { login } = useApp();
     const isCoach = role === 'coach';
-    const defaultEmail = isCoach ? 'koc@example.com' : 'ogrenci@example.com';
-    const defaultPassword = 'sifre';
 
-    const [email, setEmail] = useState(defaultEmail);
-    const [password, setPassword] = useState(defaultPassword);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
     const title = isCoach ? 'Koç Girişi' : 'Öğrenci Girişi';
@@ -156,16 +154,11 @@ const LoginForm: React.FC<{ role: UserRole; onBack: () => void }> = ({ role, onB
                 <button onClick={onBack} className="text-blue-400 hover:underline mb-4 text-sm">&larr; Geri</button>
                 <h1 className="text-3xl font-bold text-center text-blue-400 mb-6">{title}</h1>
                 <form onSubmit={handleSubmit}>
-                    <Input label="E-posta" id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={defaultEmail} required />
-                    <Input label="Şifre" id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={defaultPassword} required />
+                    <Input label="E-posta" id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="E-posta adresinizi girin" required />
+                    <Input label="Şifre" id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Şifrenizi girin" required />
                     {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
                     <Button type="submit" className="w-full">Giriş Yap</Button>
                 </form>
-                <div className="mt-4 p-3 bg-gray-700 rounded-lg text-center text-sm">
-                    <p className="text-gray-300">Varsayılan {isCoach ? 'Koç' : 'Öğrenci'} Girişi:</p>
-                    <p className="text-gray-400">E-posta: <span className="font-mono">{defaultEmail}</span></p>
-                    <p className="text-gray-400">Şifre: <span className="font-mono">{defaultPassword}</span></p>
-                </div>
             </Card>
         </div>
     );
