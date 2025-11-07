@@ -1225,7 +1225,14 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
     };
     
     const TabButton: React.FC<{tabName: string; label: string}> = ({tabName, label}) => (
-        <button onClick={() => setActiveTab(tabName)} className={`px-4 py-2 font-semibold transition-colors rounded-t-lg ${activeTab === tabName ? 'bg-gray-800 text-blue-400' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
+        <button 
+            onClick={() => setActiveTab(tabName)} 
+            className={`flex-1 px-6 py-3 font-semibold transition-all rounded-lg ${
+                activeTab === tabName 
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+            }`}
+        >
             {label}
         </button>
     );
@@ -1246,21 +1253,59 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
     );
 
     return (
-        <div>
-            <Button onClick={onBack} variant="secondary" className="mb-4">&larr; Öğrenci Listesine Dön</Button>
-            <h2 className="text-3xl font-bold mb-1">{student.name}</h2>
-            <p className="text-gray-400 mb-6">{student.examType} {student.field ? `- ${student.field}` : ''}</p>
-            
-            <div className="border-b border-gray-700">
-                <nav className="-mb-px flex space-x-2">
-                    <TabButton tabName="reports" label="Raporlar" />
-                    <TabButton tabName="assignments" label="Ödev Yönetimi" />
-                    <TabButton tabName="books" label="Kitaplar" />
-                    <TabButton tabName="info" label="Öğrenci Bilgileri" />
-                </nav>
-            </div>
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+            {/* Modern Header */}
+            <header className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                    <div className="flex items-center justify-between">
+                        <Button 
+                            onClick={onBack} 
+                            variant="secondary" 
+                            className="flex items-center gap-2 hover:bg-gray-700"
+                        >
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            Geri
+                        </Button>
 
-            <div className="mt-6">
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                                <span className="text-2xl font-bold text-white">{student.name.charAt(0)}</span>
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold text-white">{student.name}</h1>
+                                <div className="flex items-center gap-2 text-sm text-gray-400">
+                                    <span>{student.examType}</span>
+                                    {student.field && <><span>•</span><span>{student.field}</span></>}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            {student.dailyLogs.length > 0 && (
+                                <div className="flex items-center gap-2 bg-green-500/20 px-3 py-1.5 rounded-full">
+                                    <span className="h-2 w-2 bg-green-400 rounded-full animate-pulse"></span>
+                                    <span className="text-xs font-medium text-green-400">Aktif</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Tab Navigation */}
+                <div className="mb-8">
+                    <nav className="flex gap-2 p-1 bg-gray-800/50 rounded-xl backdrop-blur-sm border border-gray-700">
+                        <TabButton tabName="reports" label="📊 Raporlar" />
+                        <TabButton tabName="assignments" label="📝 Ödevler" />
+                        <TabButton tabName="books" label="📚 Kitaplar" />
+                        <TabButton tabName="info" label="👤 Bilgiler" />
+                    </nav>
+                </div>
+
+                <div className="mt-6">
                 {activeTab === 'reports' && (
                     <div>
                          <div className="p-2 bg-gray-900/50 rounded-lg flex gap-2 mb-6 self-start">
@@ -1662,6 +1707,7 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
                     </div>
                 </div>
             </Modal>
+            </div>
         </div>
     );
 };
@@ -1672,6 +1718,7 @@ const CoachDashboard = () => {
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     
     const coachStudents = useMemo(() => students.filter(s => s.coachId === currentUser?.id), [students, currentUser]);
+    
     const recentAssignments = useMemo(() => {
         return coachStudents
             .flatMap(s => s.assignments.map(a => ({...a, studentName: s.name})))
@@ -1679,65 +1726,227 @@ const CoachDashboard = () => {
             .slice(0, 5);
     }, [coachStudents]);
 
+    const stats = useMemo(() => {
+        const totalStudents = coachStudents.length;
+        const totalAssignments = coachStudents.reduce((acc, s) => acc + s.assignments.length, 0);
+        const completedAssignments = coachStudents.reduce((acc, s) => acc + s.assignments.filter(a => a.isCompleted).length, 0);
+        const activeStudents = coachStudents.filter(s => s.dailyLogs.length > 0).length;
+        
+        return { totalStudents, totalAssignments, completedAssignments, activeStudents };
+    }, [coachStudents]);
+
     if (selectedStudent) {
         return <StudentDetailPage student={selectedStudent} onBack={() => setSelectedStudent(null)} />;
     }
 
     return (
-        <div className="p-4 sm:p-8">
-            <header className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="text-4xl font-bold text-white">Koç Paneli</h1>
-                    <p className="text-gray-400">Hoş Geldiniz, {currentUser?.name}</p>
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+            {/* Modern Header */}
+            <header className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                                <span className="text-2xl font-bold text-white">K</span>
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold text-white">Koç Paneli</h1>
+                                <p className="text-sm text-gray-400">Hoş geldiniz, {currentUser?.name}</p>
+                            </div>
+                        </div>
+                        <Button onClick={logout} variant="secondary" className="flex items-center gap-2 hover:bg-gray-700">
+                            <LogoutIcon className="h-5 w-5" /> Çıkış
+                        </Button>
+                    </div>
                 </div>
-                 <Button onClick={logout} variant="secondary" className="flex items-center gap-2">
-                    <LogoutIcon className="h-5 w-5" /> Çıkış Yap
-                </Button>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                    <Card>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-2xl font-bold text-blue-400">Öğrencileriniz</h2>
-                            <Button onClick={() => setAddStudentModalOpen(true)} className="flex items-center gap-2">
-                                <PlusIcon className="h-5 w-5" /> Öğrenci Ekle
-                            </Button>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-xl p-6 backdrop-blur-sm">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-gray-400 text-sm font-medium">Toplam Öğrenci</h3>
+                            <UserIcon className="h-8 w-8 text-blue-400" />
                         </div>
-                        <div className="space-y-3">
-                            {coachStudents.length > 0 ? coachStudents.map(student => (
-                                <div key={student.id} onClick={() => setSelectedStudent(student)} className="bg-gray-700 p-4 rounded-lg flex items-center justify-between cursor-pointer hover:bg-gray-600 transition-colors group">
-                                    <div className="flex items-center gap-4">
-                                        <UserIcon className="h-8 w-8 text-blue-400" />
-                                        <div>
-                                            <p className="font-bold text-lg">{student.name}</p>
-                                            <p className="text-sm text-gray-400">{student.examType}</p>
+                        <p className="text-3xl font-bold text-white">{stats.totalStudents}</p>
+                        <p className="text-xs text-gray-500 mt-1">Kayıtlı öğrenci sayısı</p>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-500/20 rounded-xl p-6 backdrop-blur-sm">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-gray-400 text-sm font-medium">Aktif Öğrenci</h3>
+                            <svg className="h-8 w-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <p className="text-3xl font-bold text-white">{stats.activeStudents}</p>
+                        <p className="text-xs text-gray-500 mt-1">Soru çözen öğrenci</p>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 rounded-xl p-6 backdrop-blur-sm">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-gray-400 text-sm font-medium">Toplam Görev</h3>
+                            <svg className="h-8 w-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                        <p className="text-3xl font-bold text-white">{stats.totalAssignments}</p>
+                        <p className="text-xs text-gray-500 mt-1">Atanan görev sayısı</p>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-xl p-6 backdrop-blur-sm">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-gray-400 text-sm font-medium">Tamamlanan</h3>
+                            <svg className="h-8 w-8 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <p className="text-3xl font-bold text-white">{stats.completedAssignments}</p>
+                        <p className="text-xs text-gray-500 mt-1">Tamamlanan görev</p>
+                    </div>
+                </div>
+
+                {/* Main Content Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Students List */}
+                    <div className="lg:col-span-2">
+                        <Card className="bg-gray-800/50 backdrop-blur-sm border-gray-700">
+                            <div className="flex justify-between items-center mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-white">Öğrencilerim</h2>
+                                    <p className="text-sm text-gray-400 mt-1">{coachStudents.length} kayıtlı öğrenci</p>
+                                </div>
+                                <Button onClick={() => setAddStudentModalOpen(true)} className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                                    <PlusIcon className="h-5 w-5" /> Yeni Öğrenci
+                                </Button>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                {coachStudents.length > 0 ? coachStudents.map(student => {
+                                    const completionRate = student.assignments.length > 0 
+                                        ? Math.round((student.assignments.filter(a => a.isCompleted).length / student.assignments.length) * 100) 
+                                        : 0;
+                                    
+                                    return (
+                                        <div 
+                                            key={student.id} 
+                                            onClick={() => setSelectedStudent(student)} 
+                                            className="bg-gray-700/50 hover:bg-gray-700 border border-gray-600 hover:border-blue-500/50 p-5 rounded-xl cursor-pointer transition-all duration-200 group"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-4 flex-1">
+                                                    <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                                        <span className="text-xl font-bold text-white">{student.name.charAt(0)}</span>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="font-bold text-lg text-white">{student.name}</p>
+                                                            {student.dailyLogs.length > 0 && (
+                                                                <span className="h-2 w-2 bg-green-400 rounded-full"></span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-3 mt-1">
+                                                            <p className="text-sm text-gray-400">{student.examType}</p>
+                                                            {student.field && <span className="text-gray-600">•</span>}
+                                                            {student.field && <p className="text-sm text-gray-400">{student.field}</p>}
+                                                        </div>
+                                                        
+                                                        {/* Progress Bar */}
+                                                        <div className="mt-3">
+                                                            <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
+                                                                <span>Görev Tamamlama</span>
+                                                                <span>{completionRate}%</span>
+                                                            </div>
+                                                            <div className="w-full bg-gray-600 rounded-full h-2">
+                                                                <div 
+                                                                    className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-300"
+                                                                    style={{ width: `${completionRate}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="text-gray-400 group-hover:text-blue-400 transition-colors ml-4">
+                                                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                }) : (
+                                    <div className="text-center py-12">
+                                        <UserIcon className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                                        <p className="text-gray-400 text-lg mb-2">Henüz öğrenci eklemediniz</p>
+                                        <p className="text-gray-500 text-sm mb-6">İlk öğrencinizi ekleyerek başlayın</p>
+                                        <Button onClick={() => setAddStudentModalOpen(true)} className="bg-gradient-to-r from-blue-500 to-purple-600">
+                                            <PlusIcon className="h-5 w-5 inline mr-2" /> İlk Öğrenciyi Ekle
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* Recent Activities */}
+                    <div className="space-y-6">
+                        <Card className="bg-gray-800/50 backdrop-blur-sm border-gray-700">
+                            <div className="flex items-center gap-2 mb-4">
+                                <svg className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <h2 className="text-xl font-bold text-white">Son Aktiviteler</h2>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                {recentAssignments.length > 0 ? recentAssignments.map(a => (
+                                    <div key={a.id} className="bg-gray-700/50 border border-gray-600 p-4 rounded-lg hover:border-blue-500/30 transition-colors">
+                                        <div className="flex items-start justify-between mb-2">
+                                            <p className="font-semibold text-white">{a.title}</p>
+                                            {a.isCompleted && (
+                                                <span className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-full">Tamamlandı</span>
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-gray-400 mb-1">👤 {a.studentName}</p>
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <span>{new Date(a.dueDate).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}</span>
                                         </div>
                                     </div>
-                                     <div className="text-gray-400 group-hover:text-white">
-                                        <span className="font-bold text-2xl leading-none">&rsaquo;</span>
+                                )) : (
+                                    <div className="text-center py-8">
+                                        <svg className="h-12 w-12 text-gray-600 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                        </svg>
+                                        <p className="text-gray-400 text-sm">Henüz aktivite yok</p>
                                     </div>
-                                </div>
-                            )) : (
-                                <p className="text-gray-400">Henüz öğrenci eklemediniz.</p>
-                            )}
-                        </div>
-                    </Card>
-                </div>
-                <div>
-                    <Card>
-                        <h2 className="text-2xl font-bold mb-4 text-blue-400">Son Aktiviteler</h2>
-                        <ul className="space-y-3">
-                             {recentAssignments.map(a => (
-                                <li key={a.id} className="bg-gray-700 p-3 rounded-lg">
-                                    <p className="font-semibold">{a.title}</p>
-                                    <p className="text-sm text-gray-400">Atanan: {a.studentName}</p>
-                                    <p className="text-xs text-gray-500">Bitiş Tarihi: {new Date(a.dueDate).toLocaleDateString()}</p>
-                                </li>
-                            ))}
-                            {recentAssignments.length === 0 && <p className="text-gray-400">Son zamanlarda atanmış ödev yok.</p>}
-                        </ul>
-                    </Card>
+                                )}
+                            </div>
+                        </Card>
+
+                        {/* Quick Actions */}
+                        <Card className="bg-gradient-to-br from-blue-500/10 to-purple-600/10 border-blue-500/20 backdrop-blur-sm">
+                            <h3 className="text-lg font-bold text-white mb-4">Hızlı İşlemler</h3>
+                            <div className="space-y-2">
+                                <button 
+                                    onClick={() => setAddStudentModalOpen(true)}
+                                    className="w-full bg-gray-700/50 hover:bg-gray-700 border border-gray-600 hover:border-blue-500/50 p-3 rounded-lg text-left transition-all flex items-center gap-3 group"
+                                >
+                                    <div className="h-10 w-10 bg-blue-500/20 rounded-lg flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">
+                                        <PlusIcon className="h-5 w-5 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-white">Yeni Öğrenci</p>
+                                        <p className="text-xs text-gray-400">Sisteme öğrenci ekle</p>
+                                    </div>
+                                </button>
+                            </div>
+                        </Card>
+                    </div>
                 </div>
             </div>
 
