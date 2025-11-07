@@ -377,75 +377,128 @@ const StudentDashboard = () => {
     };
     
     const TabButton: React.FC<{tabName: string; label: string}> = ({tabName, label}) => (
-        <button onClick={() => setActiveTab(tabName)} className={`px-4 py-2 font-semibold rounded-t-lg transition-colors ${activeTab === tabName ? 'bg-gray-800 text-blue-400' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
+        <button 
+            onClick={() => setActiveTab(tabName)} 
+            className={`flex-1 px-3 sm:px-6 py-2 sm:py-3 text-xs sm:text-base font-semibold transition-all rounded-lg whitespace-nowrap ${
+                activeTab === tabName 
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+            }`}
+        >
             {label}
         </button>
     );
 
     return (
-        <div className="p-4 sm:p-8">
-            <header className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="text-4xl font-bold text-white">Hoş Geldin, {studentData.name}</h1>
-                    <p className="text-gray-400">Kişisel panelin</p>
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+            {/* Modern Header - Mobil Uyumlu */}
+            <header className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-10">
+                <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                            <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                                <span className="text-lg sm:text-2xl font-bold text-white">{studentData.name.charAt(0)}</span>
+                            </div>
+                            <div className="min-w-0">
+                                <h1 className="text-base sm:text-2xl font-bold text-white truncate">Hoş Geldin, {studentData.name}</h1>
+                                <p className="text-xs sm:text-sm text-gray-400 truncate">{studentData.examType}</p>
+                            </div>
+                        </div>
+                        <Button 
+                            onClick={logout} 
+                            variant="secondary" 
+                            className="flex items-center gap-1.5 sm:gap-2 hover:bg-gray-700 h-8 sm:h-10 px-2 sm:px-4 flex-shrink-0"
+                        >
+                            <LogoutIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                            <span className="hidden sm:inline text-sm sm:text-base">Çıkış</span>
+                        </Button>
+                    </div>
                 </div>
-                <Button onClick={logout} variant="secondary" className="flex items-center gap-2">
-                    <LogoutIcon className="h-5 w-5" /> Çıkış Yap
-                </Button>
             </header>
 
-            <div className="flex gap-4 mb-6">
-                <Button onClick={() => setDailyLogOpen(true)}>Günlük Soru Ekle</Button>
-                <Button onClick={openExamModal}>Deneme Sınavı Ekle</Button>
-            </div>
-            
-            <div className="border-b border-gray-700">
-                <nav className="-mb-px flex space-x-2">
-                    <TabButton tabName="assignments" label="Ödevler" />
-                    <TabButton tabName="subjects" label="Konu Takibi" />
-                </nav>
-            </div>
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+                {/* Action Buttons - Mobil Uyumlu */}
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
+                    <Button 
+                        onClick={() => setDailyLogOpen(true)}
+                        className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 w-full sm:w-auto"
+                    >
+                        <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span className="text-sm sm:text-base">Günlük Soru Ekle</span>
+                    </Button>
+                    <Button 
+                        onClick={openExamModal}
+                        className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 w-full sm:w-auto"
+                    >
+                        <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-sm sm:text-base">Deneme Sınavı Ekle</span>
+                    </Button>
+                </div>
+                
+                {/* Tab Navigation - Mobil Uyumlu */}
+                <div className="mb-4 sm:mb-8">
+                    <nav className="flex gap-1 sm:gap-2 p-1 bg-gray-800/50 rounded-lg sm:rounded-xl backdrop-blur-sm border border-gray-700">
+                        <TabButton tabName="assignments" label="📝 Ödevler" />
+                        <TabButton tabName="subjects" label="📚 Konu Takibi" />
+                    </nav>
+                </div>
 
-            <div className="mt-6">
+            <div className="mt-4 sm:mt-6">
                 {activeTab === 'assignments' && (
-                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
+                        {/* Takvim - Mobil Uyumlu */}
                         <div className="lg:col-span-3">
-                            <Card className="max-w-lg mx-auto">
+                            <Card className="max-w-lg mx-auto bg-gray-800/50 backdrop-blur-sm border-gray-700">
                                 <div className="flex justify-between items-center mb-4">
-                                    <Button onClick={() => changeMonth(-1)} variant="secondary">&lt;</Button>
-                                    <h3 className="text-xl font-bold text-blue-400">
+                                    <Button onClick={() => changeMonth(-1)} variant="secondary" className="h-8 sm:h-10 w-8 sm:w-10 p-0 flex items-center justify-center">&lt;</Button>
+                                    <h3 className="text-base sm:text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                                         {currentDate.toLocaleString('tr-TR', { month: 'long', year: 'numeric' })}
                                     </h3>
-                                    <Button onClick={() => changeMonth(1)} variant="secondary">&gt;</Button>
+                                    <Button onClick={() => changeMonth(1)} variant="secondary" className="h-8 sm:h-10 w-8 sm:w-10 p-0 flex items-center justify-center">&gt;</Button>
                                 </div>
                                 {renderCalendar()}
                             </Card>
                         </div>
+                        
+                        {/* Günün Ödevleri - Mobil Uyumlu */}
                         <div className="lg:col-span-2">
-                            <Card className="h-full">
-                                <h3 className="text-lg font-bold text-blue-400 mb-2 border-b border-gray-600 pb-2">
-                                    {selectedDate.toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                            <Card className="h-full bg-gray-800/50 backdrop-blur-sm border-gray-700">
+                                <h3 className="text-sm sm:text-lg font-bold text-blue-400 mb-2 border-b border-gray-600 pb-2 truncate">
+                                    {selectedDate.toLocaleDateString('tr-TR', { weekday: 'short', month: 'short', day: 'numeric' })}
                                 </h3>
-                                <h4 className="font-semibold text-gray-300 mb-2">Günün Ödevleri:</h4>
-                                <ul className="space-y-3 max-h-96 overflow-y-auto">
+                                <h4 className="font-semibold text-gray-300 mb-2 text-xs sm:text-base">Günün Ödevleri:</h4>
+                                <ul className="space-y-2 sm:space-y-3 max-h-96 overflow-y-auto">
                                     {assignmentsForSelectedDay.length > 0 ? assignmentsForSelectedDay.map(a => (
-                                        <li key={a.id} className="bg-gray-700 p-3 rounded-lg">
-                                            <div className="flex items-start justify-between">
-                                                <div>
-                                                    <p className={`font-semibold ${a.isCompleted ? 'line-through text-gray-500' : ''}`}>{a.title}</p>
-                                                    <p className="text-sm text-gray-400">{a.description}</p>
+                                        <li key={a.id} className="bg-gray-700/50 hover:bg-gray-700 border border-gray-600 hover:border-blue-500/50 p-2.5 sm:p-3 rounded-lg transition-all">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`font-semibold text-sm sm:text-base truncate ${a.isCompleted ? 'line-through text-gray-500' : 'text-white'}`}>{a.title}</p>
+                                                    <p className="text-xs sm:text-sm text-gray-400 line-clamp-2">{a.description}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => toggleAssignmentCompletion(studentData.id, a.id)}
-                                                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ml-2 ${a.isCompleted ? 'bg-green-500 border-green-500' : 'border-gray-400'}`}
+                                                    className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${a.isCompleted ? 'bg-green-500 border-green-500' : 'border-gray-400 hover:border-blue-400'}`}
                                                     title="Tamamlandı olarak işaretle"
                                                 >
-                                                {a.isCompleted && '✔'}
+                                                {a.isCompleted && <span className="text-white text-xs">✔</span>}
                                                 </button>
                                             </div>
-                                             <span className={`mt-2 inline-block px-2 py-1 text-xs font-bold rounded-full ${a.isCompleted ? 'bg-green-500 text-white' : 'bg-yellow-500 text-black'}`}>{a.isCompleted ? 'Tamamlandı' : 'Bekliyor'}</span>
+                                             <span className={`mt-2 inline-block px-2 py-1 text-xs font-bold rounded-full ${a.isCompleted ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'}`}>
+                                                {a.isCompleted ? '✓ Tamamlandı' : '⏱ Bekliyor'}
+                                             </span>
                                         </li>
-                                    )) : <p className="text-gray-400">Bu gün için atanmış ödev yok.</p>}
+                                    )) : (
+                                        <div className="text-center py-6 sm:py-8">
+                                            <svg className="h-12 w-12 sm:h-16 sm:w-16 text-gray-600 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <p className="text-gray-400 text-sm">Bu gün için atanmış ödev yok</p>
+                                        </div>
+                                    )}
                                 </ul>
                             </Card>
                         </div>
@@ -453,30 +506,30 @@ const StudentDashboard = () => {
                 )}
 
                 {activeTab === 'subjects' && (
-                    <Card>
-                         <h2 className="text-2xl font-bold mb-4 text-blue-400">Ders & Konu İlerlemesi</h2>
-                        <div className="space-y-2">
+                    <Card className="bg-gray-800/50 backdrop-blur-sm border-gray-700">
+                         <h2 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">📚 Ders & Konu İlerlemesi</h2>
+                        <div className="space-y-2 sm:space-y-3">
                          {(Object.keys(SUBJECTS_DATA[studentData.examType] || {})).filter(subj => studentData.subjects.includes(subj)).map(subject => (
-                             <details key={subject} className="bg-gray-700 rounded-lg">
-                                 <summary className="cursor-pointer p-4 font-semibold text-lg text-white list-none flex justify-between items-center">
-                                     {subject}
-                                     <span>&#9662;</span>
+                             <details key={subject} className="bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-lg transition-all group">
+                                 <summary className="cursor-pointer p-3 sm:p-4 font-semibold text-sm sm:text-lg text-white list-none flex justify-between items-center">
+                                     <span className="truncate">{subject}</span>
+                                     <span className="text-gray-400 group-open:rotate-180 transition-transform flex-shrink-0 ml-2">▼</span>
                                  </summary>
-                                 <div className="p-4 border-t border-gray-600">
+                                 <div className="p-3 sm:p-4 border-t border-gray-600">
                                      <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                                          {SUBJECTS_DATA[studentData.examType][subject].map(topic => {
                                              const topicKey = `${subject}-${topic}`;
                                              const isCompleted = studentData.completedTopics.includes(topicKey);
                                              return (
                                                  <li key={topicKey}>
-                                                     <label className="flex items-center space-x-3 cursor-pointer p-2 rounded hover:bg-gray-600">
+                                                     <label className="flex items-center space-x-2 sm:space-x-3 cursor-pointer p-2 rounded hover:bg-gray-600 transition-colors">
                                                          <input 
                                                              type="checkbox" 
                                                              checked={isCompleted}
                                                              onChange={() => toggleTopicCompletion(studentData.id, topicKey)}
-                                                             className="form-checkbox h-5 w-5 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-blue-500"
+                                                             className="form-checkbox h-4 w-4 sm:h-5 sm:w-5 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-blue-500 flex-shrink-0"
                                                          />
-                                                         <span className={`${isCompleted ? 'line-through text-gray-500' : 'text-gray-300'}`}>{topic}</span>
+                                                         <span className={`text-xs sm:text-sm ${isCompleted ? 'line-through text-gray-500' : 'text-gray-300'}`}>{topic}</span>
                                                      </label>
                                                  </li>
                                              );
@@ -536,7 +589,7 @@ const StudentDashboard = () => {
                     <Button type="submit" className="w-full mt-6">Sınavı Kaydet</Button>
                 </form>
             </Modal>
-
+            </div>
         </div>
     );
 };
