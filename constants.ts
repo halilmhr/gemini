@@ -73,3 +73,39 @@ export const getSubjectsForStudent = (examType: string, field?: string) => {
     }
     return [];
 };
+
+// Konu-spesifik AI yönlendirmeleri
+export const TOPIC_GUIDELINES: Record<string, Record<string, string>> = {
+  "Türkçe": {
+    "Sözcükte Anlam": "- Eş anlamlı kelimeleri öğret ve farklarını açıkla\n- Zıt anlamlı kelimeleri liste haline getir\n- Kelime çiftlerini eşleştirme alıştırmaları yap\n- Bağlamda anlam tayini öğret",
+    "Dil Bilgisi": "- Temel dil bilgisi konularını sıradüzen ile öğret\n- Her konu için örnek cümleler ver\n- Bol alıştırma problemleri dahil et\n- Sınavda çıkmış soruları incele",
+    "Yazı Türleri": "- Her yazı türünün formatını açıkla (Mektep, Bildiri, Rapor)\n- Başlık, gövde, imza vb detayları göster\n- Uygulamalı yazı alıştırmaları yap\n- Öğrenci yazılarını değerlendir",
+    "Edebiyat": "- Şiir ve edebiyat metinlerini analiz et\n- Sanatçıların tarzlarını karşılaştır\n- Edebi akımları ve dönemleri öğret\n- Metin çözümleme pratiği yap",
+    "Okuduğunu Anlama": "- Farklı türde metinler ile pratik yap\n- Sorulara cevap bulma stratejileri öğret\n- Hız ve doğruluk artışı için testler yap\n- Zor metinler ile zorluk derecesini artır",
+  },
+  "Matematik": {
+    "Temel Kavramlar": "- Sayı sistemlerini öğret (Doğal, Tam, Rasyonel, Reel)\n- Özellikleri ve ilişkilerini açıkla\n- Temel işlemleri pratik yap\n- Problem çözme yeteneğini geliştir",
+    "Türev": "- Limit kavramından başla\n- Türev tanımını ve kurallarını öğret (Power, Product, Chain)\n- Uygulamalı problemler çöz (Max-min, İnterpretasyon)\n- Grafik çizim ve analiz yap",
+    "İntegral": "- Belirsiz ve belirli integral tanımlarını öğret\n- İntegral alma kurallarını pratik yap\n- Alan ve hacim problemleri çöz\n- Uygulamalı problemler ve testler",
+    "Limit": "- Limit tanımını ve özelliklerini öğret\n- Tek taraflı limitler ve sürekliliği açıkla\n- Belirsiz formlar ve çözüm yöntemleri\n- Bol alıştırma problemleri",
+    "Logaritma": "- Üstel ve logaritmik fonksiyonları öğret\n- Logaritma kurallarını ve özelliklerini pratik yap\n- Denklem çözme ve eşitsizlikleri dahil et\n- Grafik çizim ve transformasyonları göster",
+  },
+  "Fizik": {
+    "Newton Kanunları": "- Kuvvet, kütle, ivme kavramlarını öğret\n- Üç kanunu açıkla ve uygulamalarını göster\n- Uygulamalı problemler çöz (Makaralar, Eğik Düzlem)\n- Çizim ve şema analizi",
+    "Mekanik": "- Kinematik konularını öğret (Hız, İvme, Yer Değiştirme)\n- Dinamik problemleri çöz\n- Enerji ve iş kavramlarını açıkla\n- Momentum ve çarpışmalar",
+    "Elektrik": "- Elektrik alanı ve potansiyeli öğret\n- Coulomb Yasası ve uygulamaları\n- Elektrik devrelerini analiz et (Ohm, Kirchhoff)\n- Kapasitans ve indüktans problemleri",
+    "Optik": "- Işık hızı ve refraksyon yasalarını öğret\n- Lens ve ayna problemleri çöz\n- Dalga optik konuları (Kırınım, İnterferans)\n- Göz ve görme optikleri",
+  },
+  "Kimya": {
+    "Mol Hesaplamaları": "- Mol kavramını ve hesaplamaları öğret\n- Molar kütle ve yoğunluk problemleri\n- Gazlar yasası (PV=nRT) uygulamaları\n- Stokiyometri ve oran problemleri",
+    "Asit-Baz": "- pH ve pOH kavramlarını öğret\n- Asit-baz dengesi problemleri\n- Tampon çözeltileri ve titrasyon\n- Hidroliz reaksiyonları",
+    "Organik Kimya": "- Karbon bileşiklerini sınıflandır\n- Yapı çizim ve isimlendir\n- İsomerleşme ve reaksiyonları\n- Polimerler ve biyomoleküller",
+    "Kimyasal Reaksiyonlar": "- Reaksiyon türlerini sınıflandır\n- Denklemleri dengeleme pratikleri\n- Reaksiyon hızı ve dengesi\n- Kataliz ve ortam etkisi",
+  },
+  "Biyoloji": {
+    "Hücre": "- Hücre yapısını ve organellerini öğret\n- Prokaryot ve Ökaryot karşılaştırması\n- Madde geçişini ve fonksiyonlarını açıkla\n- Mikroskop kullanımı ve gözlemler",
+    "Genetik": "- DNA ve RNA yapılarını öğret\n- Kalıtım kurallarını (Mendel) açıkla\n- Dihbrid ve monahbrid çaprazlamaları çöz\n- Kromozom ve gen mühendisliğini tartış",
+    "Ekoloji": "- Popülasyon ve komunite kavramlarını öğret\n- Beslenme zincirleri ve enerji akışını açıkla\n- Ekosistem döngülerini öğret\n- Çevre sorunlarını ve çözümleri tartış",
+    "Sistemler": "- İnsan vücudu sistemlerini öğret (Sinir, Dolaşım, Sindirim)\n- Her sistemin fonksiyonlarını açıkla\n- Hastalık ve sağlık kavramlarını tartış\n- Laboratuvar deneyleri ve gözlemler",
+  },
+};

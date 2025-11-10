@@ -6,6 +6,7 @@
 
 import React, { useState, createContext, useContext, useMemo, useEffect, useCallback } from 'react';
 import useAppDataWithSupabase from './hooks/useAppDataWithSupabase';
+import { generateStudyPlan, GeneratedAssignment } from './lib/aiService';
 import type { User, Student, Assignment, TrialExam, Book, SubjectResult, UserRole } from './types';
 import { EXAM_TYPES, AYT_FIELDS, SUBJECTS_DATA, getSubjectsForStudent, TYT_SUBJECTS } from './constants';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, Brush, PieChart, Pie, Cell } from 'recharts';
@@ -651,7 +652,15 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
     const [activeTab, setActiveTab] = useState('reports');
     const [activeReportTab, setActiveReportTab] = useState('deneme');
     const [examTypeFilter, setExamTypeFilter] = useState<'all' | 'TYT' | 'AYT'>('all');
-    const [modal, setModal] = useState<'assignment' | 'book' | null>(null);
+    const [modal, setModal] = useState<'assignment' | 'book' | 'ai-plan' | null>(null);
+
+    // AI Plan state
+    const [aiPrompt, setAiPrompt] = useState('');
+    const [aiDifficulty, setAiDifficulty] = useState('Orta');
+    const [aiPrioritySubjects, setAiPrioritySubjects] = useState<string[]>([]);
+    const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+    const [generatedPlan, setGeneratedPlan] = useState<GeneratedAssignment[] | null>(null);
+    const [aiError, setAiError] = useState<string | null>(null);
 
     const [editedStudent, setEditedStudent] = useState(student);
     const [tempSubjects, setTempSubjects] = useState<string[]>(student.subjects);
@@ -703,6 +712,47 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
         setModal(null);
         setBookName('');
     }
+
+    const handleGeneratePlan = async () => {
+        setIsGeneratingPlan(true);
+        setAiError(null);
+        setGeneratedPlan(null);
+        try {
+            if (!aiPrompt.trim()) {
+                setAiError("Lütfen planlama talimatı yazın. Hangi dersleri eklemek istediğinizi belirtin.");
+                setIsGeneratingPlan(false);
+                return;
+            }
+            
+            const plan = await generateStudyPlan({
+                examType: student.examType,
+                subjects: student.subjects,
+                prompt: aiPrompt,
+                difficulty: aiDifficulty,
+                prioritySubjects: aiPrioritySubjects.length > 0 ? aiPrioritySubjects : undefined
+            });
+            
+            setGeneratedPlan(plan);
+        } catch (error) {
+            console.error("Error generating plan:", error);
+            setAiError(error instanceof Error ? error.message : "Plan oluşturulurken bir hata oluştu. Lütfen API key'i kontrol edin ve tekrar deneyin.");
+        } finally {
+            setIsGeneratingPlan(false);
+        }
+    };
+    
+    const handleSaveAiPlan = () => {
+        if (!generatedPlan) return;
+        const today = new Date();
+        generatedPlan.forEach(task => {
+            const taskDate = new Date(today);
+            taskDate.setDate(today.getDate() + task.day - 1);
+            addAssignment(student.id, { title: task.title, description: task.description, dueDate: taskDate.toISOString().split('T')[0] });
+        });
+        setModal(null);
+        setGeneratedPlan(null);
+        setAiPrompt('');
+    };
 
     const handleStudentInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -1483,6 +1533,9 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
                                 <h3 className="text-lg font-bold text-blue-400 mb-2 border-b border-gray-600 pb-2">
                                     {selectedDate.toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                 </h3>
+                                <Button onClick={() => setModal('ai-plan')} className="w-full mb-2 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                                    <span>🤖</span> AI ile Plan Oluştur
+                                </Button>
                                 <Button onClick={openAssignmentModalForSelectedDate} className="w-full mb-4 flex items-center justify-center gap-2">
                                     <PlusIcon className="h-5 w-5"/> Bu Güne Ödev Ekle
                                 </Button>
@@ -1763,6 +1816,118 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
                             Evet, Kalıcı Olarak Sil
                         </Button>
                     </div>
+                </div>
+            </Modal>
+
+            {/* AI Plan Modal */}
+            <Modal isOpen={modal === 'ai-plan'} onClose={() => setModal(null)} title="🤖 Yapay Zeka ile Ders Planı Oluştur">
+                <div className="space-y-4">
+                    {!generatedPlan ? (
+                        <>
+                            <div className="bg-blue-500/10 border border-blue-500/30 rounded p-3 text-blue-300 text-sm">
+                                <p className="font-semibold mb-2">💡 İpucu: Hangi dersleri ve konuları çalışmak istediğinizi belirtin</p>
+                                <p className="text-xs">Örn: "Türkçe'de Dil Bilgisi ve Yazı Türleri konularına yoğunlaş" veya "Matematik'te Türev ve İntegral problemleri çöz"</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-300 text-sm font-bold mb-2">Bu hafta için ne öğretmek istiyorsunuz?</label>
+                                <textarea 
+                                    value={aiPrompt}
+                                    onChange={e => setAiPrompt(e.target.value)}
+                                    placeholder="Örn: Matematik'te Türev, Integral ve Limit konularını kapsamlı şekilde çalış. Fizik'ten de Mekanik problemleri çöz."
+                                    className="w-full h-24 p-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-300 text-sm font-bold mb-2">Zorluk Seviyesi</label>
+                                <select 
+                                    value={aiDifficulty}
+                                    onChange={e => setAiDifficulty(e.target.value)}
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option>Kolay</option>
+                                    <option>Orta</option>
+                                    <option>Zor</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-300 text-sm font-bold mb-2">Öncelikli Dersler (İsteğe Bağlı)</label>
+                                <div className="space-y-2">
+                                    {student.subjects.slice(0, 5).map(subject => (
+                                        <label key={subject} className="flex items-center gap-2 cursor-pointer">
+                                            <input 
+                                                type="checkbox"
+                                                checked={aiPrioritySubjects.includes(subject)}
+                                                onChange={e => {
+                                                    if (e.target.checked) {
+                                                        setAiPrioritySubjects([...aiPrioritySubjects, subject]);
+                                                    } else {
+                                                        setAiPrioritySubjects(aiPrioritySubjects.filter(s => s !== subject));
+                                                    }
+                                                }}
+                                                className="w-4 h-4"
+                                            />
+                                            <span className="text-gray-300 text-sm">{subject}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {aiError && (
+                                <div className="bg-red-500/20 border border-red-500/50 rounded p-3 text-red-400 text-sm">
+                                    ❌ {aiError}
+                                </div>
+                            )}
+
+                            <Button 
+                                onClick={handleGeneratePlan}
+                                disabled={isGeneratingPlan}
+                                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                            >
+                                {isGeneratingPlan ? '⏳ Yapay Zeka Plan Oluşturuyor...' : '✨ Planı Oluştur'}
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <div className="bg-green-500/10 border border-green-500/50 rounded p-3 text-green-400 text-sm mb-4">
+                                ✅ 7 günlük plan başarıyla oluşturuldu!
+                            </div>
+                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                                {generatedPlan.map((task, index) => (
+                                    <div key={index} className="bg-gray-700/50 p-3 rounded-lg border border-gray-600">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-blue-400">
+                                                    📅 Gün {task.day}: {task.title}
+                                                </p>
+                                                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{task.description}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-3 mt-4">
+                                <Button 
+                                    variant="secondary"
+                                    onClick={() => {
+                                        setGeneratedPlan(null);
+                                        setAiPrompt('');
+                                    }}
+                                    className="flex-1"
+                                >
+                                    İptal
+                                </Button>
+                                <Button 
+                                    onClick={handleSaveAiPlan}
+                                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                                >
+                                    💾 Planı Kaydet
+                                </Button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </Modal>
             </div>

@@ -1,5 +1,5 @@
 {
-  "name": "hali̇lhoca",
+  "name": "öğrenci-koçluk-platformu",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,11 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
-    "@supabase/supabase-js": "^2.80.0",
+    "recharts": "^3.3.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "recharts": "^3.3.0"
+    "@google/genai": "0.14.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
