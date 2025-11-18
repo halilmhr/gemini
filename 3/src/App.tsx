@@ -2,6 +2,14 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { generateStudyPlan } from './lib/aiService';
 
+// Lokal tarih string formatı (UTC offset sorununu çözer)
+const getLocalDateString = (date: Date = new Date()): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -151,7 +159,7 @@ function App() {
       title: task.title,
       description: task.description,
       subject: task.subject,
-      dueDate: new Date(today.getTime() + (task.day - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      dueDate: getLocalDateString(new Date(today.getTime() + (task.day - 1) * 24 * 60 * 60 * 1000)),
       isCompleted: false
     }));
 
@@ -437,3 +445,4 @@ function App() {
 }
 
 export default App;
+

@@ -8,7 +8,7 @@ import React, { useState, createContext, useContext, useMemo, useEffect, useCall
 import useAppDataWithSupabase from './hooks/useAppDataWithSupabase';
 import { generateStudyPlan, GeneratedAssignment } from './lib/aiService';
 import type { User, Student, Assignment, TrialExam, Book, SubjectResult, UserRole } from './types';
-import { EXAM_TYPES, AYT_FIELDS, SUBJECTS_DATA, getSubjectsForStudent, TYT_SUBJECTS } from './constants';
+import { EXAM_TYPES, AYT_FIELDS, SUBJECTS_DATA, getSubjectsForStudent, TYT_SUBJECTS, getLocalDateString } from './constants';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, Brush, PieChart, Pie, Cell } from 'recharts';
 
 // --- ICONS --- //
@@ -221,7 +221,7 @@ const StudentDashboard = () => {
     // --- Calendar Logic ---
     const assignmentsByDate = useMemo(() => {
         return studentData.assignments.reduce((acc, assignment) => {
-            const date = new Date(assignment.dueDate).toISOString().split('T')[0];
+            const date = assignment.dueDate; // Artık zaten YYYY-MM-DD formatında
             if (!acc[date]) {
                 acc[date] = [];
             }
@@ -245,7 +245,7 @@ const StudentDashboard = () => {
         const firstDayOfMonth = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         
-        const todayString = new Date().toISOString().split('T')[0];
+        const todayString = getLocalDateString();
         const dayNames = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
         const calendarDays = [];
 
@@ -261,9 +261,9 @@ const StudentDashboard = () => {
 
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
-            const dateString = date.toISOString().split('T')[0];
-            const isToday = new Date().toISOString().split('T')[0] === dateString;
-            const isSelected = selectedDate.toISOString().split('T')[0] === dateString;
+            const dateString = getLocalDateString(date);
+            const isToday = getLocalDateString() === dateString;
+            const isSelected = getLocalDateString(selectedDate) === dateString;
             
             const dailyAssignments = assignmentsByDate[dateString] || [];
             let dayStatus: 'completed' | 'pending' | 'overdue' | null = null;
@@ -316,7 +316,7 @@ const StudentDashboard = () => {
     };
 
     const assignmentsForSelectedDay = useMemo(() => {
-        const dateString = selectedDate.toISOString().split('T')[0];
+        const dateString = getLocalDateString(selectedDate);
         return assignmentsByDate[dateString] || [];
     }, [selectedDate, assignmentsByDate]);
 
@@ -747,7 +747,7 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
         generatedPlan.forEach(task => {
             const taskDate = new Date(today);
             taskDate.setDate(today.getDate() + task.day - 1);
-            addAssignment(student.id, { title: task.title, description: task.description, dueDate: taskDate.toISOString().split('T')[0] });
+            addAssignment(student.id, { title: task.title, description: task.description, dueDate: getLocalDateString(taskDate) });
         });
         setModal(null);
         setGeneratedPlan(null);
@@ -827,7 +827,7 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
         const firstDayOfMonth = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         
-        const todayString = new Date().toISOString().split('T')[0];
+        const todayString = getLocalDateString();
         const dayNames = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
         const calendarDays = [];
 
@@ -843,9 +843,9 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
 
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
-            const dateString = date.toISOString().split('T')[0];
-            const isToday = new Date().toISOString().split('T')[0] === dateString;
-            const isSelected = selectedDate.toISOString().split('T')[0] === dateString;
+            const dateString = getLocalDateString(date);
+            const isToday = getLocalDateString() === dateString;
+            const isSelected = getLocalDateString(selectedDate) === dateString;
 
             const dailyAssignments = assignmentsByDate[dateString] || [];
             let dayStatus: 'completed' | 'pending' | 'overdue' | null = null;
@@ -898,12 +898,12 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
     };
 
     const assignmentsForSelectedDay = useMemo(() => {
-        const dateString = selectedDate.toISOString().split('T')[0];
+        const dateString = getLocalDateString(selectedDate);
         return assignmentsByDate[dateString] || [];
     }, [selectedDate, assignmentsByDate]);
     
     const openAssignmentModalForSelectedDate = () => {
-        setAssignmentDueDate(selectedDate.toISOString().split('T')[0]);
+        setAssignmentDueDate(getLocalDateString(selectedDate));
         setModal('assignment');
     };
 
@@ -925,7 +925,7 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
     }, [student.dailyLogs]);
 
     const logsForSelectedQuestionDate = useMemo(() => {
-        const dateString = questionCalendarSelectedDate.toISOString().split('T')[0];
+        const dateString = getLocalDateString(questionCalendarSelectedDate);
         return dailyLogsByDate[dateString] || null;
     }, [questionCalendarSelectedDate, dailyLogsByDate]);
 
@@ -964,9 +964,9 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
 
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
-            const dateString = date.toISOString().split('T')[0];
-            const isToday = new Date().toISOString().split('T')[0] === dateString;
-            const isSelected = questionCalendarSelectedDate.toISOString().split('T')[0] === dateString;
+            const dateString = getLocalDateString(date);
+            const isToday = getLocalDateString() === dateString;
+            const isSelected = getLocalDateString(questionCalendarSelectedDate) === dateString;
             
             const dailyLog = dailyLogsByDate[dateString];
             
@@ -1219,7 +1219,7 @@ const StudentDetailPage: React.FC<{student: Student; onBack: () => void}> = ({ s
         const { total, completed, rate, overdue } = useMemo(() => {
             const totalAssignments = student.assignments.length;
             const completedAssignments = student.assignments.filter(a => a.isCompleted).length;
-            const todayString = new Date().toISOString().split('T')[0];
+            const todayString = getLocalDateString();
             const overdueAssignments = student.assignments.filter(a => !a.isCompleted && a.dueDate < todayString).length;
             const completionRate = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
             return {
@@ -2247,3 +2247,4 @@ function App() {
 }
 
 export default App;
+
