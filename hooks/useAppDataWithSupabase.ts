@@ -439,8 +439,19 @@ const useAppDataWithSupabase = () => {
   }, [useSupabase]);
 
   const toggleAssignmentCompletion = useCallback(async (studentId: string, assignmentId: string) => {
+    // Optimistic UI update - hemen UI'ı güncelle
+    setStudents(prev => prev.map(s => {
+      if (s.id === studentId) {
+        return {
+          ...s,
+          assignments: s.assignments.map(a => a.id === assignmentId ? {...a, isCompleted: !a.isCompleted} : a)
+        }
+      }
+      return s;
+    }));
+
     if (useSupabase) {
-      // First get the current assignment
+      // Arka planda Supabase'i güncelle
       const student = students.find(s => s.id === studentId);
       const assignment = student?.assignments.find(a => a.id === assignmentId);
       
@@ -453,20 +464,17 @@ const useAppDataWithSupabase = () => {
 
       if (error) {
         console.error('Error toggling assignment:', error);
-        return;
-      }
-
-      await loadDataFromSupabase();
-    } else {
-      setStudents(prev => prev.map(s => {
-        if (s.id === studentId) {
-          return {
-            ...s,
-            assignments: s.assignments.map(a => a.id === assignmentId ? {...a, isCompleted: !a.isCompleted} : a)
+        // Hata durumunda geri al
+        setStudents(prev => prev.map(s => {
+          if (s.id === studentId) {
+            return {
+              ...s,
+              assignments: s.assignments.map(a => a.id === assignmentId ? {...a, isCompleted: assignment.isCompleted} : a)
+            }
           }
-        }
-        return s;
-      }));
+          return s;
+        }));
+      }
     }
   }, [useSupabase, students]);
 
@@ -630,15 +638,24 @@ const useAppDataWithSupabase = () => {
   // =====================================================
 
   const toggleTopicCompletion = useCallback(async (studentId: string, topicKey: string) => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const completed = student.completedTopics.includes(topicKey);
+    const newCompletedTopics = completed 
+      ? student.completedTopics.filter(t => t !== topicKey)
+      : [...student.completedTopics, topicKey];
+
+    // Optimistic UI update - hemen UI'ı güncelle
+    setStudents(prev => prev.map(s => {
+      if (s.id === studentId) {
+        return {...s, completedTopics: newCompletedTopics};
+      }
+      return s;
+    }));
+
     if (useSupabase) {
-      const student = students.find(s => s.id === studentId);
-      if (!student) return;
-
-      const completed = student.completedTopics.includes(topicKey);
-      const newCompletedTopics = completed 
-        ? student.completedTopics.filter(t => t !== topicKey)
-        : [...student.completedTopics, topicKey];
-
+      // Arka planda Supabase'i güncelle
       const { error } = await supabase
         .from('students')
         .update({ completed_topics: newCompletedTopics })
@@ -646,21 +663,14 @@ const useAppDataWithSupabase = () => {
 
       if (error) {
         console.error('Error toggling topic:', error);
-        return;
+        // Hata durumunda geri al
+        setStudents(prev => prev.map(s => {
+          if (s.id === studentId) {
+            return {...s, completedTopics: student.completedTopics};
+          }
+          return s;
+        }));
       }
-
-      await loadDataFromSupabase();
-    } else {
-      setStudents(prev => prev.map(s => {
-        if (s.id === studentId) {
-          const completed = s.completedTopics.includes(topicKey);
-          const newCompletedTopics = completed 
-            ? s.completedTopics.filter(t => t !== topicKey)
-            : [...s.completedTopics, topicKey];
-          return {...s, completedTopics: newCompletedTopics};
-        }
-        return s;
-      }));
     }
   }, [useSupabase, students]);
 
