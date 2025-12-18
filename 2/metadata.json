@@ -1,0 +1,5 @@
+{
+  "name": "Öğrenci Koçluk Platformu",
+  "description": "Öğrenci koçlarının öğrencilerini yönetmesi, görevler ataması ve ilerlemelerini takip etmesi için bir platform. Öğrenciler günlük çalışmalarını, sınav sonuçlarını kaydedebilir ve konu takiplerini yapabilirler.",
+  "requestFramePermissions": []
+}
