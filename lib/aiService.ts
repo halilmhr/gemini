@@ -5,6 +5,7 @@ export interface GeneratedAssignment {
   title: string;
   description: string;
   subject: string;
+  topic?: string; // Konu adı (YouTube araması için)
 }
 
 interface PlanOptions {
@@ -13,6 +14,8 @@ interface PlanOptions {
   prompt: string;
   difficulty: string;
   prioritySubjects?: string[];
+  planDuration?: number; // Kaç günlük plan (7, 14, 30)
+  dailyHours?: number; // Günlük çalışma saati
 }
 
 // Konu-spesifik yönlendirmeler (Ders > Konu)
@@ -136,13 +139,16 @@ COĞRAFYA DERSİ ÖZELLİKLERİ:
 
 export const generateStudyPlan = async (options: PlanOptions): Promise<GeneratedAssignment[]> => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  
+
   if (!apiKey) {
     throw new Error("VITE_GEMINI_API_KEY env variable not found");
   }
 
   const client = new GoogleGenerativeAI(apiKey);
   const model = client.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+  const planDays = options.planDuration || 7;
+  const dailyHours = options.dailyHours || 3;
 
   let fullPrompt = `Öğrencinin sınav türü: ${options.examType}. Sorumlu olduğu tüm dersler: ${options.subjects.join(', ')}.
             
@@ -152,8 +158,9 @@ export const generateStudyPlan = async (options: PlanOptions): Promise<Generated
 3. Her gün için ayrı bir görev oluştur (her görev bir ders/konu olmalı).
 4. Her görevin başlığı ders adını içermeli (örn: "Matematik - Türev", "Fizik - Newton Kanunları").
 5. Her görevin açıklaması ÇOK DETAYLI olmalı - hangi konular çalışılacak, kaç soru çözülecek, ne tür örnekler yapılacak vb.
+6. Öğrencinin günlük çalışma süresi ${dailyHours} saat. Görevleri bu süreye göre ayarla.
 
-Koçun bu haftaki plan için isteği: "${options.prompt}"
+Koçun bu plan için isteği: "${options.prompt}"
 Planın zorluk seviyesi: ${options.difficulty}`;
 
   // Seçili derslerin özel yönlendirmelerini ekle
@@ -170,13 +177,15 @@ Planın zorluk seviyesi: ${options.difficulty}`;
     fullPrompt += `\n\nÖncelikli dersler (daha fazla ağırlık ver): ${options.prioritySubjects.join(', ')}`;
   }
 
-  fullPrompt += `\n\n7 günlük bir ders çalışma planı oluştur. Her gün için ayrı bir görev tanımla ve her görev bir ders/konuyu temsil etsin.
+  fullPrompt += `\n\n${planDays} günlük bir ders çalışma planı oluştur. Her gün için ayrı bir görev tanımla ve her görev bir ders/konuyu temsil etsin.
+Günlük çalışma süresi: ${dailyHours} saat. Her görevi bu süreye uygun planla.
 
 HER GÖREV ÖZELLİKLE:
-- Gün numarası (1-7)
+- Gün numarası (1-${planDays})
 - Açık başlık (ders adı ve konu adı içermeli)
-- ÇOK DETAYLI açıklama (hangi konu başlıklarını içereceği, kaç soru tipi, ne tür alıştırmalar yapılacağı, tahmini zaman)
+- ÇOK DETAYLI açıklama (hangi konu başlıklarını içereceği, kaç soru tipi, ne tür alıştırmalar yapılacağı, tahmini süre: ${dailyHours} saat içinde)
 - Ders adı
+- Konu adı (YouTube'da aranabilecek kısa konu ismi, örn: "Türev", "Limit", "Newton Kanunları")
 
 JSON formatında cevap döndür:
 {
@@ -184,8 +193,9 @@ JSON formatında cevap döndür:
     {
       "day": 1,
       "title": "Ders Adı - Konu Adı",
-      "description": "ÇOK DETAYLI açıklama - hangi konular, kaç soru, ne tür alıştırmalar, tahmini zaman",
-      "subject": "Dersin Adı"
+      "description": "ÇOK DETAYLI açıklama - hangi konular, kaç soru, ne tür alıştırmalar, ${dailyHours} saatlik çalışma içeriği",
+      "subject": "Dersin Adı",
+      "topic": "Konu Adı"
     }
   ]
 }`;
@@ -221,9 +231,13 @@ JSON formatında cevap döndür:
                   subject: {
                     type: SchemaType.STRING,
                     description: "Dersin adı (örn: Matematik, Fizik, Kimya, Türkçe, İngilizce)"
+                  },
+                  topic: {
+                    type: SchemaType.STRING,
+                    description: "Konu adı - YouTube'da aranabilecek kısa konu ismi (örn: Türev, Limit, Newton Kanunları)"
                   }
                 },
-                required: ["day", "title", "description", "subject"]
+                required: ["day", "title", "description", "subject", "topic"]
               }
             }
           },
@@ -231,9 +245,9 @@ JSON formatında cevap döndür:
         }
       }
     });
-    
+
     let jsonString = response.response.text().trim();
-    
+
     // Clean JSON string
     if (jsonString.startsWith('```json')) {
       jsonString = jsonString.substring(7, jsonString.length - 3).trim();

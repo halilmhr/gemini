@@ -5,6 +5,108 @@ export const EXAM_TYPES = {
   GENEL_TAKIP: 'Genel Takip',
 };
 
+// AI Plan Oluşturucu için Sabitler
+export const PLAN_DURATIONS = [
+  { value: 7, label: '1 Hafta (7 gün)' },
+  { value: 14, label: '2 Hafta (14 gün)' },
+  { value: 30, label: '1 Ay (30 gün)' },
+];
+
+export const DAILY_STUDY_HOURS = [
+  { value: 2, label: '2 saat' },
+  { value: 3, label: '3 saat' },
+  { value: 4, label: '4 saat' },
+  { value: 5, label: '5 saat' },
+  { value: 6, label: '6 saat' },
+  { value: 8, label: '8 saat' },
+];
+
+export const AI_PROMPT_TEMPLATES = [
+  {
+    id: 'tyt-genel',
+    label: '📚 TYT Genel Hazırlık',
+    prompt: 'TYT sınavına genel hazırlık için tüm dersleri dengeli şekilde çalış. Temel kavramlara odaklan ve soru çözümü yap.',
+  },
+  {
+    id: 'matematik-yogun',
+    label: '🔢 Matematik Yoğun',
+    prompt: 'Matematik dersine yoğunlaş. Türev, İntegral, Limit ve Fonksiyonlar konularını kapsamlı çalış. Bol problem çöz.',
+  },
+  {
+    id: 'fen-bilimleri',
+    label: '🔬 Fen Bilimleri Odaklı',
+    prompt: 'Fizik, Kimya ve Biyoloji derslerine ağırlık ver. Her dersten temel konuları çalış ve deney-gözlem sorularına odaklan.',
+  },
+  {
+    id: 'turkce-edebiyat',
+    label: '📖 Türkçe ve Edebiyat',
+    prompt: 'Türkçe dil bilgisi kurallarını ve paragraf çözümlerini pratik yap. Edebiyat dönemlerini ve sanatçıları çalış.',
+  },
+  {
+    id: 'zayif-konular',
+    label: '⚠️ Zayıf Konulara Odaklan',
+    prompt: 'Eksik olduğum konulara yoğunlaş. Temel kavramlardan başla ve adım adım ilerle. Çok soru çöz.',
+  },
+  {
+    id: 'sinav-oncesi',
+    label: '🎯 Sınav Öncesi Sprint',
+    prompt: 'Sınav öncesi son hazırlık için yoğun program. Her dersten en çok çıkan konuları tekrar et ve deneme sınavı çöz.',
+  },
+];
+
+// Popüler YouTube Eğitim Kanalları
+export const YOUTUBE_CHANNELS: { [key: string]: { name: string; url: string; icon: string }[] } = {
+  'Matematik': [
+    { name: 'Tonguç Akademi', url: 'https://www.youtube.com/@TongucAkademi', icon: '🎓' },
+    { name: 'Hocalara Geldik', url: 'https://www.youtube.com/@HocalaraGeldik', icon: '📚' },
+    { name: 'Şenol Hoca', url: 'https://www.youtube.com/@SenolHocaMatematik', icon: '🔢' },
+  ],
+  'Fizik': [
+    { name: 'Tonguç Akademi', url: 'https://www.youtube.com/@TongucAkademi', icon: '🎓' },
+    { name: 'Fizikfinito', url: 'https://www.youtube.com/@Fizikfinito', icon: '⚡' },
+    { name: 'Hocalara Geldik', url: 'https://www.youtube.com/@HocalaraGeldik', icon: '📚' },
+  ],
+  'Kimya': [
+    { name: 'Tonguç Akademi', url: 'https://www.youtube.com/@TongucAkademi', icon: '🎓' },
+    { name: 'Hocalara Geldik', url: 'https://www.youtube.com/@HocalaraGeldik', icon: '📚' },
+    { name: 'Kimya Adası', url: 'https://www.youtube.com/@KimyaAdasi', icon: '🧪' },
+  ],
+  'Biyoloji': [
+    { name: 'Tonguç Akademi', url: 'https://www.youtube.com/@TongucAkademi', icon: '🎓' },
+    { name: 'Hocalara Geldik', url: 'https://www.youtube.com/@HocalaraGeldik', icon: '📚' },
+  ],
+  'Türkçe': [
+    { name: 'Tonguç Akademi', url: 'https://www.youtube.com/@TongucAkademi', icon: '🎓' },
+    { name: 'Hocalara Geldik', url: 'https://www.youtube.com/@HocalaraGeldik', icon: '📚' },
+    { name: 'Rüştü Hoca', url: 'https://www.youtube.com/@RustuHoca', icon: '📖' },
+  ],
+  'Tarih': [
+    { name: 'Tonguç Akademi', url: 'https://www.youtube.com/@TongucAkademi', icon: '🎓' },
+    { name: 'Hocalara Geldik', url: 'https://www.youtube.com/@HocalaraGeldik', icon: '📚' },
+  ],
+  'Coğrafya': [
+    { name: 'Tonguç Akademi', url: 'https://www.youtube.com/@TongucAkademi', icon: '🎓' },
+    { name: 'Hocalara Geldik', url: 'https://www.youtube.com/@HocalaraGeldik', icon: '📚' },
+  ],
+  'default': [
+    { name: 'Tonguç Akademi', url: 'https://www.youtube.com/@TongucAkademi', icon: '🎓' },
+    { name: 'Hocalara Geldik', url: 'https://www.youtube.com/@HocalaraGeldik', icon: '📚' },
+  ],
+};
+
+// YouTube'da konu araması için link oluştur
+export const getYouTubeSearchUrl = (subject: string, topic: string): string => {
+  const query = encodeURIComponent(`${subject} ${topic} konu anlatımı`);
+  return `https://www.youtube.com/results?search_query=${query}`;
+};
+
+// Derse göre YouTube kanallarını getir
+export const getYouTubeChannelsForSubject = (subject: string): { name: string; url: string; icon: string }[] => {
+  // Ders adını normalize et (parantez içindeki kısmı kaldır)
+  const normalizedSubject = subject.replace(/\s*\(.*\)/, '').trim();
+  return YOUTUBE_CHANNELS[normalizedSubject] || YOUTUBE_CHANNELS['default'];
+};
+
 export const AYT_FIELDS = {
   SAYISAL: 'Sayısal',
   SOZEL: 'Sözel',

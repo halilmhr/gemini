@@ -8,7 +8,7 @@ import React, { useState, createContext, useContext, useMemo, useEffect, useCall
 import useAppDataWithSupabase from './hooks/useAppDataWithSupabase';
 import { generateStudyPlan, GeneratedAssignment } from './lib/aiService';
 import type { User, Student, Assignment, TrialExam, Book, SubjectResult, UserRole } from './types';
-import { EXAM_TYPES, AYT_FIELDS, SUBJECTS_DATA, getSubjectsForStudent, getSubjectsDataKey, TYT_SUBJECTS, getLocalDateString } from './constants';
+import { EXAM_TYPES, AYT_FIELDS, SUBJECTS_DATA, getSubjectsForStudent, getSubjectsDataKey, TYT_SUBJECTS, getLocalDateString, DAILY_STUDY_HOURS, AI_PROMPT_TEMPLATES, getYouTubeSearchUrl, getYouTubeChannelsForSubject } from './constants';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, Brush, PieChart, Pie, Cell } from 'recharts';
 
 // --- ICONS --- //
@@ -473,23 +473,45 @@ const StudentDashboard = () => {
                                     <h4 className="font-semibold text-gray-300 mb-2 text-xs sm:text-base">Günün Ödevleri:</h4>
                                     <ul className="space-y-2 sm:space-y-3 max-h-96 overflow-y-auto">
                                         {assignmentsForSelectedDay.length > 0 ? assignmentsForSelectedDay.map(a => (
-                                            <li key={a.id} className="bg-gray-700/50 hover:bg-gray-700 border border-gray-600 hover:border-blue-500/50 p-2.5 sm:p-3 rounded-lg transition-all">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className={`font-semibold text-sm sm:text-base truncate ${a.isCompleted ? 'line-through text-gray-500' : 'text-white'}`}>{a.title}</p>
-                                                        <p className="text-xs sm:text-sm text-gray-400 line-clamp-2">{a.description}</p>
+                                            <li key={a.id}>
+                                                <details className="bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-lg transition-all group">
+                                                    <summary className="cursor-pointer p-2.5 sm:p-3 list-none">
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                                <span className="text-gray-400 group-open:rotate-90 transition-transform flex-shrink-0">▶</span>
+                                                                <p className={`font-semibold text-sm sm:text-base truncate ${a.isCompleted ? 'line-through text-gray-500' : 'text-white'}`}>{a.title}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                                <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${a.isCompleted ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                                                    {a.isCompleted ? '✓' : '⏱'}
+                                                                </span>
+                                                                <button
+                                                                    onClick={(e) => { e.preventDefault(); toggleAssignmentCompletion(studentData.id, a.id); }}
+                                                                    className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center transition-all ${a.isCompleted ? 'bg-green-500 border-green-500' : 'border-gray-400 hover:border-blue-400'}`}
+                                                                    title="Tamamlandı olarak işaretle"
+                                                                >
+                                                                    {a.isCompleted && <span className="text-white text-xs">✔</span>}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </summary>
+                                                    <div className="px-3 pb-3 pt-0 border-t border-gray-600 mt-2">
+                                                        <p className="text-xs sm:text-sm text-gray-300 whitespace-pre-wrap mb-3">{a.description}</p>
+                                                        {a.youtubeUrl && (
+                                                            <a
+                                                                href={a.youtubeUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-all"
+                                                            >
+                                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                                                </svg>
+                                                                📺 Video İzle
+                                                            </a>
+                                                        )}
                                                     </div>
-                                                    <button
-                                                        onClick={() => toggleAssignmentCompletion(studentData.id, a.id)}
-                                                        className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${a.isCompleted ? 'bg-green-500 border-green-500' : 'border-gray-400 hover:border-blue-400'}`}
-                                                        title="Tamamlandı olarak işaretle"
-                                                    >
-                                                        {a.isCompleted && <span className="text-white text-xs">✔</span>}
-                                                    </button>
-                                                </div>
-                                                <span className={`mt-2 inline-block px-2 py-1 text-xs font-bold rounded-full ${a.isCompleted ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'}`}>
-                                                    {a.isCompleted ? '✓ Tamamlandı' : '⏱ Bekliyor'}
-                                                </span>
+                                                </details>
                                             </li>
                                         )) : (
                                             <div className="text-center py-6 sm:py-8">
@@ -512,7 +534,25 @@ const StudentDashboard = () => {
                                 {(Object.keys(SUBJECTS_DATA[studentData.examType] || {})).filter(subj => studentData.subjects.includes(subj)).map(subject => (
                                     <details key={subject} className="bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-lg transition-all group">
                                         <summary className="cursor-pointer p-3 sm:p-4 font-semibold text-sm sm:text-lg text-white list-none flex justify-between items-center">
-                                            <span className="truncate">{subject}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="truncate">{subject}</span>
+                                                {/* Popüler Kanallar */}
+                                                <div className="hidden sm:flex gap-1">
+                                                    {getYouTubeChannelsForSubject(subject).slice(0, 2).map(channel => (
+                                                        <a
+                                                            key={channel.name}
+                                                            href={channel.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            onClick={e => e.stopPropagation()}
+                                                            className="text-xs bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white px-2 py-0.5 rounded-full transition-all"
+                                                            title={channel.name}
+                                                        >
+                                                            {channel.icon}
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
                                             <span className="text-gray-400 group-open:rotate-180 transition-transform flex-shrink-0 ml-2">▼</span>
                                         </summary>
                                         <div className="p-3 sm:p-4 border-t border-gray-600">
@@ -521,16 +561,27 @@ const StudentDashboard = () => {
                                                     const topicKey = `${subject}-${topic}`;
                                                     const isCompleted = studentData.completedTopics.includes(topicKey);
                                                     return (
-                                                        <li key={topicKey}>
-                                                            <label className="flex items-center space-x-2 sm:space-x-3 cursor-pointer p-2 rounded hover:bg-gray-600 transition-colors">
+                                                        <li key={topicKey} className="flex items-center justify-between gap-1">
+                                                            <label className="flex items-center space-x-2 sm:space-x-3 cursor-pointer p-2 rounded hover:bg-gray-600 transition-colors flex-1 min-w-0">
                                                                 <input
                                                                     type="checkbox"
                                                                     checked={isCompleted}
                                                                     onChange={() => toggleTopicCompletion(studentData.id, topicKey)}
                                                                     className="form-checkbox h-4 w-4 sm:h-5 sm:w-5 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-blue-500 flex-shrink-0"
                                                                 />
-                                                                <span className={`text-xs sm:text-sm ${isCompleted ? 'line-through text-gray-500' : 'text-gray-300'}`}>{topic}</span>
+                                                                <span className={`text-xs sm:text-sm truncate ${isCompleted ? 'line-through text-gray-500' : 'text-gray-300'}`}>{topic}</span>
                                                             </label>
+                                                            <a
+                                                                href={getYouTubeSearchUrl(subject, topic)}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-600/20 rounded transition-all flex-shrink-0"
+                                                                title="YouTube'da video ara"
+                                                            >
+                                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                                                </svg>
+                                                            </a>
                                                         </li>
                                                     );
                                                 })}
@@ -663,6 +714,8 @@ const StudentDetailPage: React.FC<{ student: Student; onBack: () => void }> = ({
     const [aiPrompt, setAiPrompt] = useState('');
     const [aiDifficulty, setAiDifficulty] = useState('Orta');
     const [aiPrioritySubjects, setAiPrioritySubjects] = useState<string[]>([]);
+    const [aiPlanDuration, setAiPlanDuration] = useState(7);
+    const [aiDailyHours, setAiDailyHours] = useState(3);
     const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
     const [generatedPlan, setGeneratedPlan] = useState<GeneratedAssignment[] | null>(null);
     const [aiError, setAiError] = useState<string | null>(null);
@@ -734,7 +787,9 @@ const StudentDetailPage: React.FC<{ student: Student; onBack: () => void }> = ({
                 subjects: student.subjects,
                 prompt: aiPrompt,
                 difficulty: aiDifficulty,
-                prioritySubjects: aiPrioritySubjects.length > 0 ? aiPrioritySubjects : undefined
+                prioritySubjects: aiPrioritySubjects.length > 0 ? aiPrioritySubjects : undefined,
+                planDuration: aiPlanDuration,
+                dailyHours: aiDailyHours
             });
 
             setGeneratedPlan(plan);
@@ -752,7 +807,16 @@ const StudentDetailPage: React.FC<{ student: Student; onBack: () => void }> = ({
         generatedPlan.forEach(task => {
             const taskDate = new Date(today);
             taskDate.setDate(today.getDate() + task.day - 1);
-            addAssignment(student.id, { title: task.title, description: task.description, dueDate: getLocalDateString(taskDate) });
+
+            // YouTube linkini ayrı bir alan olarak kaydet
+            const youtubeUrl = task.topic ? getYouTubeSearchUrl(task.subject, task.topic) : undefined;
+
+            addAssignment(student.id, {
+                title: task.title,
+                description: task.description,
+                dueDate: getLocalDateString(taskDate),
+                youtubeUrl: youtubeUrl
+            });
         });
         setModal(null);
         setGeneratedPlan(null);
@@ -1202,12 +1266,25 @@ const StudentDetailPage: React.FC<{ student: Student; onBack: () => void }> = ({
                                     const topicKey = `${subject}-${topic}`;
                                     const isCompleted = student.completedTopics.includes(topicKey);
                                     return (
-                                        <li key={topicKey} className={`flex items-center space-x-3`}>
-                                            {isCompleted ?
-                                                <CheckCircleIcon className="h-5 w-5 text-green-400 flex-shrink-0" /> :
-                                                <CircleIcon className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                                            }
-                                            <span className={`${isCompleted ? 'text-gray-200' : 'text-gray-400'}`}>{topic}</span>
+                                        <li key={topicKey} className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center space-x-3 min-w-0">
+                                                {isCompleted ?
+                                                    <CheckCircleIcon className="h-5 w-5 text-green-400 flex-shrink-0" /> :
+                                                    <CircleIcon className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                                                }
+                                                <span className={`truncate ${isCompleted ? 'text-gray-200' : 'text-gray-400'}`}>{topic}</span>
+                                            </div>
+                                            <a
+                                                href={getYouTubeSearchUrl(subject, topic)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-600/20 rounded transition-all flex-shrink-0"
+                                                title="YouTube'da video ara"
+                                            >
+                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                                </svg>
+                                            </a>
                                         </li>
                                     );
                                 })}
@@ -1828,19 +1905,60 @@ const StudentDetailPage: React.FC<{ student: Student; onBack: () => void }> = ({
                     <div className="space-y-4">
                         {!generatedPlan ? (
                             <>
-                                <div className="bg-blue-500/10 border border-blue-500/30 rounded p-3 text-blue-300 text-sm">
-                                    <p className="font-semibold mb-2">💡 İpucu: Hangi dersleri ve konuları çalışmak istediğinizi belirtin</p>
-                                    <p className="text-xs">Örn: "Türkçe'de Dil Bilgisi ve Yazı Türleri konularına yoğunlaş" veya "Matematik'te Türev ve İntegral problemleri çöz"</p>
+                                {/* Hazır Şablonlar */}
+                                <div>
+                                    <label className="block text-gray-300 text-sm font-bold mb-2">📋 Hazır Şablonlar (Tek Tıkla Doldur)</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {AI_PROMPT_TEMPLATES.map(template => (
+                                            <button
+                                                key={template.id}
+                                                onClick={() => setAiPrompt(template.prompt)}
+                                                className="px-3 py-1.5 text-xs bg-gray-700 hover:bg-blue-600 border border-gray-600 hover:border-blue-500 rounded-full text-gray-300 hover:text-white transition-all"
+                                            >
+                                                {template.label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-gray-300 text-sm font-bold mb-2">Bu hafta için ne öğretmek istiyorsunuz?</label>
+                                    <label className="block text-gray-300 text-sm font-bold mb-2">Bu plan için ne öğretmek istiyorsunuz?</label>
                                     <textarea
                                         value={aiPrompt}
                                         onChange={e => setAiPrompt(e.target.value)}
                                         placeholder="Örn: Matematik'te Türev, Integral ve Limit konularını kapsamlı şekilde çalış. Fizik'ten de Mekanik problemleri çöz."
                                         className="w-full h-24 p-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
+                                </div>
+
+                                {/* Plan Süresi ve Günlük Saat */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-gray-300 text-sm font-bold mb-2">📅 Kaç Günlük Plan?</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="60"
+                                                value={aiPlanDuration}
+                                                onChange={e => setAiPlanDuration(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
+                                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-gray-400 text-sm whitespace-nowrap">gün</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-300 text-sm font-bold mb-2">⏰ Günlük Çalışma</label>
+                                        <select
+                                            value={aiDailyHours}
+                                            onChange={e => setAiDailyHours(Number(e.target.value))}
+                                            className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {DAILY_STUDY_HOURS.map(hours => (
+                                                <option key={hours.value} value={hours.value}>{hours.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div>
@@ -1858,9 +1976,9 @@ const StudentDetailPage: React.FC<{ student: Student; onBack: () => void }> = ({
 
                                 <div>
                                     <label className="block text-gray-300 text-sm font-bold mb-2">Öncelikli Dersler (İsteğe Bağlı)</label>
-                                    <div className="space-y-2">
-                                        {student.subjects.slice(0, 5).map(subject => (
-                                            <label key={subject} className="flex items-center gap-2 cursor-pointer">
+                                    <div className="flex flex-wrap gap-2">
+                                        {student.subjects.slice(0, 6).map(subject => (
+                                            <label key={subject} className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-full border transition-all ${aiPrioritySubjects.includes(subject) ? 'bg-blue-600 border-blue-500 text-white' : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'}`}>
                                                 <input
                                                     type="checkbox"
                                                     checked={aiPrioritySubjects.includes(subject)}
@@ -1871,9 +1989,9 @@ const StudentDetailPage: React.FC<{ student: Student; onBack: () => void }> = ({
                                                             setAiPrioritySubjects(aiPrioritySubjects.filter(s => s !== subject));
                                                         }
                                                     }}
-                                                    className="w-4 h-4"
+                                                    className="hidden"
                                                 />
-                                                <span className="text-gray-300 text-sm">{subject}</span>
+                                                <span className="text-sm">{subject}</span>
                                             </label>
                                         ))}
                                     </div>
@@ -1890,13 +2008,13 @@ const StudentDetailPage: React.FC<{ student: Student; onBack: () => void }> = ({
                                     disabled={isGeneratingPlan}
                                     className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                                 >
-                                    {isGeneratingPlan ? '⏳ Yapay Zeka Plan Oluşturuyor...' : '✨ Planı Oluştur'}
+                                    {isGeneratingPlan ? '⏳ Yapay Zeka Plan Oluşturuyor...' : `✨ ${aiPlanDuration} Günlük Plan Oluştur`}
                                 </Button>
                             </>
                         ) : (
                             <>
                                 <div className="bg-green-500/10 border border-green-500/50 rounded p-3 text-green-400 text-sm mb-4">
-                                    ✅ 7 günlük plan başarıyla oluşturuldu!
+                                    ✅ {aiPlanDuration} günlük plan başarıyla oluşturuldu! (Günlük {aiDailyHours} saat)
                                 </div>
                                 <div className="space-y-3 max-h-96 overflow-y-auto">
                                     {generatedPlan.map((task, index) => (
@@ -1908,6 +2026,20 @@ const StudentDetailPage: React.FC<{ student: Student; onBack: () => void }> = ({
                                                     </p>
                                                     <p className="text-xs text-gray-400 mt-1 line-clamp-2">{task.description}</p>
                                                 </div>
+                                                {task.topic && (
+                                                    <a
+                                                        href={getYouTubeSearchUrl(task.subject, task.topic)}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-all flex-shrink-0"
+                                                        title={`${task.topic} için YouTube'da video ara`}
+                                                    >
+                                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                                        </svg>
+                                                        Video İzle
+                                                    </a>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
@@ -2201,9 +2333,9 @@ const AppContent: React.FC<{
     loginRole: UserRole | null;
     setLoginRole: (role: UserRole | null) => void;
 }> = ({ loginRole, setLoginRole }) => {
-    const { currentUser, isLoading } = useApp();
+    const { currentUser, isLoading, isCheckingSession } = useApp();
 
-    if (isLoading) {
+    if (isLoading || isCheckingSession) {
         return <div className="min-h-screen flex items-center justify-center">Yükleniyor...</div>;
     }
 

@@ -16,7 +16,7 @@ const useAppDataWithSupabase = () => {
   // =====================================================
   // INITIALIZATION & DATA LOADING
   // =====================================================
-  
+
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -40,10 +40,30 @@ const useAppDataWithSupabase = () => {
     initializeData();
   }, [useSupabase]);
 
+  // Oturum geri yükleme - veriler yüklendikten sonra
+  useEffect(() => {
+    if (!isLoading && users.length > 0 && !currentUser) {
+      const savedUserId = localStorage.getItem('current_user_id');
+      if (savedUserId) {
+        const user = users.find(u => u.id === savedUserId);
+        if (user) {
+          console.log('🔄 Session restored for:', user.email);
+          setCurrentUser(user);
+        } else {
+          // Kullanıcı bulunamadı, session'ı temizle
+          localStorage.removeItem('current_user_id');
+        }
+      }
+    }
+  }, [isLoading, users, currentUser]);
+
+  // Oturum kontrolü yapılırken true döner
+  const isCheckingSession = !isLoading && users.length > 0 && !currentUser && !!localStorage.getItem('current_user_id');
+
   const loadDataFromLocalStorage = () => {
     const storedUsers = localStorage.getItem('app_users');
     const storedStudents = localStorage.getItem('app_students');
-    
+
     let initialUsers: User[] = storedUsers ? JSON.parse(storedUsers) : [];
     let initialStudents: Student[] = storedStudents ? JSON.parse(storedStudents) : [];
 
@@ -96,25 +116,25 @@ const useAppDataWithSupabase = () => {
           totalIncorrect: 15,
           totalBlank: 5,
           subjectResults: [
-            {subject: 'Türkçe', correct: 30, incorrect: 5, blank: 5},
-            {subject: 'Matematik', correct: 25, incorrect: 5, blank: 0},
-            {subject: 'Fizik', correct: 15, incorrect: 2, blank: 3},
-            {subject: 'Kimya', correct: 10, incorrect: 3, blank: 2},
+            { subject: 'Türkçe', correct: 30, incorrect: 5, blank: 5 },
+            { subject: 'Matematik', correct: 25, incorrect: 5, blank: 0 },
+            { subject: 'Fizik', correct: 15, incorrect: 2, blank: 3 },
+            { subject: 'Kimya', correct: 10, incorrect: 3, blank: 2 },
           ]
         }],
         completedTopics: ['Matematik-Temel Kavramlar', 'Türkçe-Sözcükte Anlam'],
-        books: [{id: `book_default_1`, name: '3D TYT Matematik Soru Bankası'}]
+        books: [{ id: `book_default_1`, name: '3D TYT Matematik Soru Bankası' }]
       };
       initialStudents.push(defaultStudent);
     }
-    
+
     setUsers(initialUsers);
     setStudents(initialStudents);
   };
 
   const loadDataFromSupabase = async () => {
     console.log('🔄 Loading data from Supabase...');
-    
+
     // Load all users
     const { data: usersData, error: usersError } = await supabase
       .from('users')
@@ -161,6 +181,7 @@ const useAppDataWithSupabase = () => {
         description: a.description || '',
         dueDate: a.due_date,
         isCompleted: a.is_completed,
+        youtubeUrl: a.youtube_url,
       })),
       dailyLogs: (s.daily_logs || []).map((dl: any) => ({
         date: dl.date,
@@ -195,7 +216,7 @@ const useAppDataWithSupabase = () => {
   // =====================================================
   // PERSISTENCE
   // =====================================================
-  
+
   useEffect(() => {
     if (!isLoading && !useSupabase) {
       localStorage.setItem('app_users', JSON.stringify(users));
@@ -212,15 +233,17 @@ const useAppDataWithSupabase = () => {
     console.log('📊 Total users in state:', users.length);
     console.log('👥 Users:', users);
     console.log('🔑 Looking for password hash:', pseudoHash(password));
-    
+
     const user = users.find(u => {
       console.log(`  Checking: ${u.email} | ${u.passwordHash} === ${pseudoHash(password)}?`, u.email === email && u.passwordHash === pseudoHash(password));
       return u.email === email && u.passwordHash === pseudoHash(password);
     });
-    
+
     if (user) {
       console.log('✅ Login successful!', user);
       setCurrentUser(user);
+      // Oturumu kaydet
+      localStorage.setItem('current_user_id', user.id);
       return user;
     }
     console.log('❌ Login failed - user not found');
@@ -229,6 +252,8 @@ const useAppDataWithSupabase = () => {
 
   const logout = useCallback(() => {
     setCurrentUser(null);
+    // Oturumu sil
+    localStorage.removeItem('current_user_id');
   }, []);
 
   // =====================================================
@@ -237,12 +262,12 @@ const useAppDataWithSupabase = () => {
 
   const addStudent = useCallback(async (
     studentData: Omit<Student, 'id' | 'assignments' | 'dailyLogs' | 'trialExams' | 'completedTopics' | 'books'>,
-    userData: {email: string, password: string}
+    userData: { email: string, password: string }
   ) => {
     if (useSupabase) {
       // Insert into Supabase
       const studentId = crypto.randomUUID();
-      
+
       const { error: userError } = await supabase
         .from('users')
         .insert({
@@ -363,6 +388,7 @@ const useAppDataWithSupabase = () => {
           description: assignmentData.description,
           due_date: assignmentData.dueDate,
           is_completed: false,
+          youtube_url: assignmentData.youtubeUrl,
         });
 
       if (error) {
@@ -377,7 +403,7 @@ const useAppDataWithSupabase = () => {
         id: `assign_${Date.now()}`,
         isCompleted: false,
       };
-      setStudents(prev => prev.map(s => s.id === studentId ? {...s, assignments: [...s.assignments, newAssignment]} : s));
+      setStudents(prev => prev.map(s => s.id === studentId ? { ...s, assignments: [...s.assignments, newAssignment] } : s));
     }
   }, [useSupabase]);
 
@@ -444,7 +470,7 @@ const useAppDataWithSupabase = () => {
       if (s.id === studentId) {
         return {
           ...s,
-          assignments: s.assignments.map(a => a.id === assignmentId ? {...a, isCompleted: !a.isCompleted} : a)
+          assignments: s.assignments.map(a => a.id === assignmentId ? { ...a, isCompleted: !a.isCompleted } : a)
         }
       }
       return s;
@@ -454,7 +480,7 @@ const useAppDataWithSupabase = () => {
       // Arka planda Supabase'i güncelle
       const student = students.find(s => s.id === studentId);
       const assignment = student?.assignments.find(a => a.id === assignmentId);
-      
+
       if (!assignment) return;
 
       const { error } = await supabase
@@ -469,7 +495,7 @@ const useAppDataWithSupabase = () => {
           if (s.id === studentId) {
             return {
               ...s,
-              assignments: s.assignments.map(a => a.id === assignmentId ? {...a, isCompleted: assignment.isCompleted} : a)
+              assignments: s.assignments.map(a => a.id === assignmentId ? { ...a, isCompleted: assignment.isCompleted } : a)
             }
           }
           return s;
@@ -505,7 +531,7 @@ const useAppDataWithSupabase = () => {
       setStudents(prev => prev.map(s => {
         if (s.id === studentId) {
           const books = s.books || [];
-          return {...s, books: [...books, newBook]};
+          return { ...s, books: [...books, newBook] };
         }
         return s;
       }));
@@ -528,7 +554,7 @@ const useAppDataWithSupabase = () => {
     } else {
       setStudents(prev => prev.map(s => {
         if (s.id === studentId) {
-          return {...s, books: (s.books || []).filter(b => b.id !== bookId)};
+          return { ...s, books: (s.books || []).filter(b => b.id !== bookId) };
         }
         return s;
       }));
@@ -629,7 +655,7 @@ const useAppDataWithSupabase = () => {
         id: `trial_${Date.now()}`,
         date: date
       };
-      setStudents(prev => prev.map(s => s.id === studentId ? {...s, trialExams: [...s.trialExams, newExam]} : s));
+      setStudents(prev => prev.map(s => s.id === studentId ? { ...s, trialExams: [...s.trialExams, newExam] } : s));
     }
   }, [useSupabase]);
 
@@ -642,14 +668,14 @@ const useAppDataWithSupabase = () => {
     if (!student) return;
 
     const completed = student.completedTopics.includes(topicKey);
-    const newCompletedTopics = completed 
+    const newCompletedTopics = completed
       ? student.completedTopics.filter(t => t !== topicKey)
       : [...student.completedTopics, topicKey];
 
     // Optimistic UI update - hemen UI'ı güncelle
     setStudents(prev => prev.map(s => {
       if (s.id === studentId) {
-        return {...s, completedTopics: newCompletedTopics};
+        return { ...s, completedTopics: newCompletedTopics };
       }
       return s;
     }));
@@ -666,7 +692,7 @@ const useAppDataWithSupabase = () => {
         // Hata durumunda geri al
         setStudents(prev => prev.map(s => {
           if (s.id === studentId) {
-            return {...s, completedTopics: student.completedTopics};
+            return { ...s, completedTopics: student.completedTopics };
           }
           return s;
         }));
@@ -693,6 +719,7 @@ const useAppDataWithSupabase = () => {
     addDailyLog,
     addTrialExam,
     toggleTopicCompletion,
+    isCheckingSession,
   };
 };
 

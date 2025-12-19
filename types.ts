@@ -15,6 +15,7 @@ export interface Assignment {
   description: string;
   dueDate: string;
   isCompleted: boolean;
+  youtubeUrl?: string;
 }
 
 export interface DailyLog {
